@@ -481,7 +481,8 @@ restartAll() {
 optionsHints="
   $GREEN options: $0 [-t|--type|--execute-type 执行类型] [-i|--index|--host-index 主机索引] [-c|--node-count 每台主机部署的结点数]
     [-b|--begin-pos|--start-pos 主机上部署结点索引范围的起始位置] [-e|--end-pos 主机上部署结点索引范围的结束位置]
-    [-I|-ip|--master-node-ip 主节点所在主机的ip，推荐使用内网ip，部署从节点时需要] [-d|-id|--master-node-id 主节点id，部署从节点时需要] $TAILS"
+    [-I|-ip|--master-node-ip 主节点所在主机的ip，推荐使用内网ip，部署从节点时需要] [-d|-id|--master-node-id 主节点id，部署从节点时需要]
+    [-h|-help|--help help information] $TAILS"
 
 commandHelpHints="
      $BLUE deploy or restart the blockchain $TAILS
@@ -548,7 +549,7 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-    -h|--help)
+    -h|-help|--help)
       $OUTPUT "$commandHelpHints"
       exit 1
       ;;
