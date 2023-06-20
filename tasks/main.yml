@@ -368,3 +368,12 @@
     executable: /bin/bash
   tags:
     - remove-logs
+
+- name: get help hints
+  shell: /bin/bash deploy.sh -help
+  when: inventory_hostname in groups[slaves_group] or groups[master_group]
+  args:
+    chdir: "{{home_work_dir}}"
+    executable: /bin/bash
+  tags:
+    - help
