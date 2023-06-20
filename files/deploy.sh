@@ -543,19 +543,23 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-    -d|-id|--master-node-id)
+    -d|--id|--master-node-id)
       masterNodeId="$2"
       shift # past argument
       shift # past value
       ;;
+    -h|--help)
+      $OUTPUT "$commandHelpHints"
+      exit 1
+      ;;
     --default)
       echo "Unknown option $1"
-      $OUTPUT "$optionsHints"
+      $OUTPUT "$commandHelpHints"
       exit 1
       ;;
     -*|--*)
       echo "Unknown option $1"
-      $OUTPUT "$optionsHints"
+      $OUTPUT "$commandHelpHints"
       exit 1
       ;;
     *)
