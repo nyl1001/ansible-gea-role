@@ -1,0 +1,38 @@
+galaxy_info:
+  role_name: xd_gea
+  author: neil
+  description: Install, configure and prepare a xingdao me server.
+
+  # If the issue tracker for your role is not on github, uncomment the
+  # next line and provide a value
+  # issue_tracker_url: http://example.com/issue/tracker
+
+  license: GPL-2.0-or-later
+
+  min_ansible_version: 2.9
+
+  # Provide a list of supported platforms, and for each platform a list of versions.
+  # If you don't wish to enumerate all versions for a particular platform, use 'all'.
+  # To view available platforms and versions (or releases), visit:
+  # https://galaxy.ansible.com/api/v1/platforms/
+  #
+  platforms:
+    - name: EL
+      versions:
+        - 7
+        - 8
+    - name: Debian
+      versions:
+        - stretch
+        - buster
+    - name: Ubuntu
+      versions:
+        - stretch
+        - buster
+
+  galaxy_tags:
+    - upgrade
+    - upgrade-bin
+    - init-db-schema
+
+dependencies: []
