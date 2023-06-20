@@ -8,6 +8,7 @@
   tags:
     - deploy
     - redeploy
+    - init-common
 
 - name: execute init work directory shell script
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
@@ -15,6 +16,7 @@
   tags:
     - deploy
     - redeploy
+    - init-common
 
 - name: copy main script files
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
@@ -32,6 +34,24 @@
     - start
     - restart
     - remove-logs
+    - init-common
+
+- name: init common shell script
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  shell: /bin/bash init_common.sh --chain-bin-name {{common.chain_bin_name}} --coin-unit {{common.coin_unit}} \
+    --admin-name {{common.admin_name}} --explorer-backend-bin-name {{common.explorer_backend_bin_name}} --chain-id {{common.chain_id}} \
+    --keyring-dir {{common.keyring_dir}} --keyring-backend {{common.keyring_backend}} --minimum-gas-prices {{common.minimum_gas_prices}}
+  args:
+    chdir: "{{home_work_dir}}"
+    executable: /bin/bash
+  tags:
+    - deploy
+    - redeploy
+    - start
+    - restart
+    - only-upgrade-chain-bin
+    - only-start-stopped-chain-node
+    - init-common
 
 - name: mkdir bin dir
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
@@ -47,10 +67,10 @@
 - name: copy bin files
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
   copy:
-    src: "{{chain_bin_file_dir}}/{{item}}"
+    src: ../files/{{item}}
     dest: "{{home_work_dir}}/bin"
   with_items:
-    - gea-poad
+    - "{{ common.chain_bin_name }}"
   tags:
     - deploy
     - redeploy
@@ -61,9 +81,10 @@
 
 - name: give executable permissions to chain binary
   when: (not has_root_pwd) and (inventory_hostname in groups[master_group] or groups[slaves_group])
-  shell: sh init.sh
+  shell: /bin/bash init.sh
   args:
     chdir: "{{home_work_dir}}"
+    executable: /bin/bash
   tags:
     - deploy
     - redeploy
@@ -79,7 +100,7 @@
   become: yes
   become_user: root
   with_items:
-    - gea-poad
+    - "{{ common.chain_bin_name }}"
   args:
     chdir: "{{home_work_dir}}/bin"
   tags:
@@ -156,7 +177,7 @@
 
 - name: get master node id
   when: inventory_hostname in groups[master_group]
-  shell: ./gea-poad tendermint show-node-id --home {{home_work_dir}}/nodes/node1
+  shell: ./{{ common.chain_bin_name }} tendermint show-node-id --home {{home_work_dir}}/nodes/node1
   register: masterNodeIdResult
   args:
     chdir: "{{home_work_dir}}/bin"
@@ -250,13 +271,13 @@
 
 - name: query chain status
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  shell: ps aux | grep gea-poad | grep -v "grep"
+  shell: ps aux | grep {{ common.chain_bin_name }} | grep -v "grep"
   tags:
     - status
 
 - name: kill chain
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  shell: ps aux | grep gea-poad | grep -v "grep" | awk '{print $2}' | xargs kill -9
+  shell: ps aux | grep {{ common.chain_bin_name }} | grep -v "grep" | awk '{print $2}' | xargs kill -9
   tags:
     - stop
     - kill

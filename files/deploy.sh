@@ -29,8 +29,8 @@ case $sysType in
 esac
 
 currentOsUserHomeDir=$(cd ~;pwd)
-keyringDir=${currentOsUserHomeDir}/.gea-poa
-keyringBackend=test
+keyringDir=${currentOsUserHomeDir}/.${commonKeyringDir}
+keyringBackend=$commonKeyringBackend
 with_key_dir_param="--keyring-dir=${keyringDir}"
 withKeyringBackendParam="--keyring-backend=${keyringBackend}"
 with_key_home_param=""
@@ -38,7 +38,7 @@ with_key_home_param=""
 initMinimumGasPrices=0src
 initMinimumSendFees=0.0002$coinUnit
 distMinimumGasPrices=5u$coinUnit
-distMinimumSendFees=200u$coinUnit
+distMinimumSendFees=${minimumGasPrices}u$coinUnit
 
 cleanChainDataDirAndLogs() {
   if [ ! -d "${deployDir}/nodes" ]; then

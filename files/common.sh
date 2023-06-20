@@ -8,3 +8,9 @@ coinUnit=geac
 chainId=gea-poa
 # admin name
 adminName=superadmin
+
+commonKeyringDir=gea-poa
+
+commonKeyringBackend=test
+
+minimumGasPrices=200
