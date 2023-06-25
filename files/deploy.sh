@@ -680,8 +680,7 @@ case $executeType in
         ;;
     "restart-master")
         checkBasicInputArgs
-        restartMasterNode
-        showAllStartStatus
+        restartAll "$globalStartIndex" "$globalEndIndex"
         ;;
     "restart-slaves")
 #        nodeCount=$(($nodeCount+1))
