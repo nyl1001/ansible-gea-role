@@ -13,4 +13,10 @@ commonKeyringDir=gea-poa
 
 commonKeyringBackend=test
 
-minimumGasPrices=200
+initMinimumGasPrices=0src
+
+initMinimumSendFees=0.0002
+
+finalMinimumGasPrices=5
+
+finalMinimumSendFees=200

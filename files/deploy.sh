@@ -35,10 +35,10 @@ with_key_dir_param="--keyring-dir=${keyringDir}"
 withKeyringBackendParam="--keyring-backend=${keyringBackend}"
 with_key_home_param=""
 
-initMinimumGasPrices=0src
-initMinimumSendFees=0.0002$coinUnit
-distMinimumGasPrices=5u$coinUnit
-distMinimumSendFees=${minimumGasPrices}u$coinUnit
+initMinimumGasPrices=$initMinimumGasPrices
+initMinimumSendFees=${initMinimumSendFees}$coinUnit
+distMinimumGasPrices=${finalMinimumGasPrices}u$coinUnit
+distMinimumSendFees=${finalMinimumSendFees}u$coinUnit
 
 cleanChainDataDirAndLogs() {
   if [ ! -d "${deployDir}/nodes" ]; then
