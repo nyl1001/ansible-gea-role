@@ -1,29 +1,6 @@
-- name: copy init work directory shell script file
-  when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  copy:
-    src: ../files/{{item}}
-    dest: "/tmp/{{item}}"
-  with_items:
-    - init_work_dir.sh
-  tags:
-    - deploy
-    - redeploy
-    - init-common
-
-- name: execute init work directory shell script
-  when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  shell: sh /tmp/init_work_dir.sh {{chain_deploy_home_dir}}
-  tags:
-    - deploy
-    - redeploy
-    - init-common
-
-- name: upload common.sh file to work directory
-  ansible.builtin.template:
-    src: shell/common.sh.j2
-    dest: "{{chain_deploy_home_dir}}/common.sh"
-  when:
-    - "inventory_hostname in groups[master_group] or groups[slaves_group]"
+- name: init directory and common file
+  include_tasks:
+    file: sub_init.yml
   tags:
     - deploy
     - redeploy
@@ -32,15 +9,9 @@
     - remove-logs
     - init-common
 
-- name: copy main script files
-  when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  copy:
-    src: ../files/{{item}}
-    dest: "{{chain_deploy_home_dir}}"
-  with_items:
-    - func.sh
-    - deploy.sh
-    - init.sh
+- name: copy config files and bin files
+  include_tasks:
+    file: sub_copy_files.yml
   tags:
     - deploy
     - redeploy
@@ -48,234 +19,57 @@
     - restart
     - remove-logs
     - deploy-slaves
-
-- name: mkdir bin dir
-  when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  shell: mkdir -p bin
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-  tags:
-    - deploy
-    - redeploy
-    - start
-    - restart
-
-- name: copy bin files
-  when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  copy:
-    src: "{{chain_bin_file_dir}}/{{item}}"
-    dest: "{{chain_deploy_home_dir}}/bin/"
-  with_items:
-    - "{{ common.chain_bin_name }}"
-  tags:
-    - deploy
-    - redeploy
-    - start
-    - restart
     - only-upgrade-chain-bin
     - only-start-stopped-chain-node
 
-- name: give executable permissions to chain binary
-  when: (not has_root_pwd) and (inventory_hostname in groups[master_group] or groups[slaves_group])
-  shell: /bin/bash init.sh
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-    executable: /bin/bash
+- name: deploy all chain nodes, include master node and slave nodes
+  include_tasks:
+    file: sub_deploy.yml
   tags:
     - deploy
     - redeploy
-    - start
-    - restart
-    - only-upgrade-chain-bin
-    - only-start-stopped-chain-node
+    - deploy-slaves
 
-- name: give executable permissions to chain binary for root user
-  when: has_root_pwd and (inventory_hostname in groups[master_group] or groups[slaves_group])
-  shell: chmod +x {{item}}
-  become_method: sudo
-  become: yes
-  become_user: root
-  with_items:
-    - "{{ common.chain_bin_name }}"
-  args:
-    chdir: "{{chain_deploy_home_dir}}/bin"
-  tags:
-    - deploy
-    - redeploy
-    - start
-    - restart
-    - only-upgrade-chain-bin
-    - only-start-stopped-chain-node
-
-- name: deploy master
-  shell: /bin/bash deploy.sh -t redeploy --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }} --admin-amount 0ugeac && sleep 5
-  when: inventory_hostname in groups[master_group]
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-    executable: /bin/bash
-  tags:
-    - deploy
-    - redeploy
-
-- name: start master
-  shell: /bin/bash deploy.sh -t start-master --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
-  when: inventory_hostname in groups[master_group]
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-    executable: /bin/bash
-  tags:
-    - start
-    - only-start-stopped-chain-node
-    - fast-start
-
-- name: restart master
-  shell: /bin/bash deploy.sh -t restart --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
-  when: inventory_hostname in groups[master_group]
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-    executable: /bin/bash
+- name: restart all chain nodes, include master node and slave nodes
+  include_tasks:
+    file: sub_restart.yml
   tags:
     - restart
     - only-upgrade-chain-bin
     - fast-restart
 
-- name: copy master genesis file
-  when: inventory_hostname in groups[master_group]
-  copy :
-    src: "{{chain_deploy_home_dir}}/nodes/node1/config/{{item}}"
-    dest: "{{chain_deploy_home_dir}}/{{item}}"
-    remote_src: yes
-  with_items:
-    - genesis.json
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: 从主节点下载genesis.json文件到控制节点
-  when: inventory_hostname in groups[master_group]
-  fetch:
-    src: "{{ chain_deploy_home_dir }}/genesis.json"
-    dest: "/tmp/"
-    flat: yes
-  register: genesis_file_content_result
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: 从控制节点复制genesis.json文件到从节点
-  when: inventory_hostname in groups[slaves_group]
-  copy:
-    src: "/tmp/genesis.json"
-    dest: "{{ chain_deploy_home_dir }}/genesis.json"
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: get master node id
-  when: inventory_hostname in groups[master_group]
-  shell: ./{{ common.chain_bin_name }} tendermint show-node-id --home {{chain_deploy_home_dir}}/nodes/node1
-  register: masterNodeIdResult
-  args:
-    chdir: "{{chain_deploy_home_dir}}/bin"
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: debug get master node id result
-  debug:
-    var: masterNodeIdResult
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: save master node id to file
-  when: inventory_hostname in groups[master_group]
-  copy:
-    content: "{{ masterNodeIdResult.stdout | b64decode }}"
-    dest: "{{chain_deploy_home_dir}}/nodeId.txt"
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: 从主节点下载node id文件到控制节点
-  when: inventory_hostname in groups[master_group]
-  fetch:
-    src: "{{ chain_deploy_home_dir }}/nodeId.txt"
-    dest: "/tmp/"
-    flat: yes
-  register: raw_master_node_id_result
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: 从控制节点复制node id文件到从节点
-  when: inventory_hostname in groups[slaves_group]
-  copy:
-    src: "/tmp/nodeId.txt"
-    dest: "{{ chain_deploy_home_dir }}/nodeId.txt"
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: retrieve master node id from file
-  when: inventory_hostname in groups[slaves_group]
-  slurp:
-    src: "{{chain_deploy_home_dir}}/nodeId.txt"
-  register: master_node_id_result
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: debug master_node_id_result
-  debug:
-    var: master_node_id_result
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: deploy slaves
-  shell: /bin/bash deploy.sh -t redeploy-slaves --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }} \
-    --master-node-id "{{ master_node_id_result.content }}" --master-node-ip "{{ master_node_host_ip }}" --pre-node-index {{ hostvars[inventory_hostname]['pre_node_index'] }}
-  when: inventory_hostname in groups[slaves_group]
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-    executable: /bin/bash
-  tags:
-    - deploy
-    - redeploy
-    - deploy-slaves
-
-- name: start slaves
-  shell: /bin/bash deploy.sh -t start-slaves --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }} --master-node-id "{{ master_node_id_result.content }}"
-  when: inventory_hostname in groups[slaves_group]
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-    executable: /bin/bash
+- name: start all chain nodes, include master node and slave nodes
+  include_tasks:
+    file: sub_start.yml
   tags:
     - start
     - only-start-stopped-chain-node
     - fast-start
 
-- name: restart slaves
-  shell: /bin/bash deploy.sh -t restart-slaves --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
-  when: inventory_hostname in groups[slaves_group]
+- name: stop all chain nodes, include master node and slave nodes
+  include_tasks:
+    file: sub_stop.yml
+  tags:
+    - stop
+
+- name: remove chain logs
+  shell: /bin/bash deploy.sh -t remove-logs
+  when: inventory_hostname in groups[slaves_group] or groups[master_group]
   args:
     chdir: "{{chain_deploy_home_dir}}"
     executable: /bin/bash
   tags:
-    - restart
-    - only-upgrade-chain-bin
-    - fast-restart
+    - remove-logs
+
+- name: auto generate validators and regions
+  include_tasks:
+    file: sub_gen_regions.yml
+  tags:
+    - gen-validator-id
+    - init-region
+    - remove-region
+    - do-exec-init-region
+    - sync-init-region-sh
 
 - name: query chain status
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
@@ -289,93 +83,6 @@
   tags:
     - stop
     - kill
-
-- name: copy get validator shell script file
-  when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  copy:
-    src: ../files/{{item}}
-    dest: "{{chain_deploy_home_dir}}"
-  with_items:
-    - get-validator-id.sh
-  tags:
-    - init-region
-    - remove-region
-
-- name: get all validator id, save them to tmp dir
-  when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  shell: /bin/bash get-validator-id.sh --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
-  register: adminAddrResult
-  args:
-    chdir: "{{chain_deploy_home_dir}}/"
-    executable: /bin/bash
-  tags:
-    - init-region
-    - remove-region
-    - gen-validator-id
-
-- name: 下载目录/tmp/validator-ids
-  when: inventory_hostname in groups[master_group] or groups[slaves_group]
-  synchronize:
-    src: "/tmp/validator-ids"
-    dest: "/tmp/"
-    mode: pull
-  tags:
-    - init-region
-    - remove-region
-
-- name: copy all /tmp/validator-ids directory to master node
-  when: inventory_hostname in groups[master_group]
-  copy:
-    src: /tmp/{{item}}
-    dest: "/tmp/"
-  with_items:
-    - validator-ids
-  tags:
-    - init-region
-    - remove-region
-
-- name: copy init region shell related script files
-  when: inventory_hostname in groups[master_group]
-  copy:
-    src: ../files/{{item}}
-    dest: "{{chain_deploy_home_dir}}"
-  with_items:
-    - func.sh
-    - common.sh
-    - init_region.sh
-  tags:
-    - init-region
-    - remove-region
-    - do-exec-init-region
-    - sync-init-region-sh
-
-- name: execute init region operation
-  shell: chmod +x init_region.sh && /bin/bash init_region.sh -t create --begin-pos {{ validator_begin_node_pos }} --end-pos {{ validator_end_node_pos }}
-  when: inventory_hostname in groups[master_group]
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-    executable: /bin/bash
-  tags:
-    - init-region
-    - remove-region
-    - do-exec-init-region
-
-- name: test init region
-  shell: curRegions={{regions[hostvars[inventory_hostname]['index']]['list']}} && echo "$curRegions"
-  when: inventory_hostname in groups[master_group]
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-  tags:
-    - test
-
-- name: remove chain logs
-  shell: /bin/bash deploy.sh -t remove-logs
-  when: inventory_hostname in groups[slaves_group] or groups[master_group]
-  args:
-    chdir: "{{chain_deploy_home_dir}}"
-    executable: /bin/bash
-  tags:
-    - remove-logs
 
 - name: get help hints
   shell: /bin/bash deploy.sh -help

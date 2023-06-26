@@ -1,0 +1,125 @@
+- name: deploy master
+  shell: /bin/bash deploy.sh -t redeploy --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }} --admin-amount 0u{{ common.coin_unit }} && sleep 5
+  when: inventory_hostname in groups[master_group]
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+    executable: /bin/bash
+  tags:
+    - deploy
+    - redeploy
+
+- name: copy master genesis file
+  when: inventory_hostname in groups[master_group]
+  copy :
+    src: "{{chain_deploy_home_dir}}/nodes/node1/config/{{item}}"
+    dest: "{{chain_deploy_home_dir}}/{{item}}"
+    remote_src: yes
+  with_items:
+    - genesis.json
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: 从主节点下载genesis.json文件到控制节点
+  when: inventory_hostname in groups[master_group]
+  fetch:
+    src: "{{ chain_deploy_home_dir }}/genesis.json"
+    dest: "/tmp/"
+    flat: yes
+  register: genesis_file_content_result
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: 从控制节点复制genesis.json文件到从节点
+  when: inventory_hostname in groups[slaves_group]
+  copy:
+    src: "/tmp/genesis.json"
+    dest: "{{ chain_deploy_home_dir }}/genesis.json"
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: get master node id
+  when: inventory_hostname in groups[master_group]
+  shell: ./{{ common.chain_bin_name }} tendermint show-node-id --home {{chain_deploy_home_dir}}/nodes/node1
+  register: masterNodeIdResult
+  args:
+    chdir: "{{chain_deploy_home_dir}}/bin"
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: debug get master node id result
+  debug:
+    var: masterNodeIdResult
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: save master node id to file
+  when: inventory_hostname in groups[master_group]
+  copy:
+    content: "{{ masterNodeIdResult.stdout | b64decode }}"
+    dest: "{{chain_deploy_home_dir}}/nodeId.txt"
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: 从主节点下载node id文件到控制节点
+  when: inventory_hostname in groups[master_group]
+  fetch:
+    src: "{{ chain_deploy_home_dir }}/nodeId.txt"
+    dest: "/tmp/"
+    flat: yes
+  register: raw_master_node_id_result
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: 从控制节点复制node id文件到从节点
+  when: inventory_hostname in groups[slaves_group]
+  copy:
+    src: "/tmp/nodeId.txt"
+    dest: "{{ chain_deploy_home_dir }}/nodeId.txt"
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: retrieve master node id from file
+  when: inventory_hostname in groups[slaves_group]
+  slurp:
+    src: "{{chain_deploy_home_dir}}/nodeId.txt"
+  register: master_node_id_result
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: debug master_node_id_result
+  debug:
+    var: master_node_id_result
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves
+
+- name: deploy slaves
+  shell: /bin/bash deploy.sh -t redeploy-slaves --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }} \
+    --master-node-id "{{ master_node_id_result.content }}" --master-node-ip "{{ master_node_host_ip }}" --pre-node-index {{ hostvars[inventory_hostname]['pre_node_index'] }}
+  when: inventory_hostname in groups[slaves_group]
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+    executable: /bin/bash
+  tags:
+    - deploy
+    - redeploy
+    - deploy-slaves

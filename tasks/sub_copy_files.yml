@@ -1,0 +1,91 @@
+- name: copy main script files
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  copy:
+    src: ../files/{{item}}
+    dest: "{{chain_deploy_home_dir}}"
+  with_items:
+    - func.sh
+    - deploy.sh
+    - init.sh
+  tags:
+    - deploy
+    - redeploy
+    - start
+    - restart
+    - remove-logs
+    - deploy-slaves
+
+#- name: init common shell script
+#  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+#  shell: /bin/bash init_common.sh --chain-bin-name {{common.chain_bin_name}} --coin-unit {{common.coin_unit}} \
+#    --admin-name {{common.admin_name}} --explorer-backend-bin-name {{common.explorer_backend_bin_name}} --chain-id {{common.chain_id}} \
+#    --keyring-dir {{common.keyring_dir}} --keyring-backend {{common.keyring_backend}} --minimum-gas-prices {{common.minimum_gas_prices}}
+#  args:
+#    chdir: "{{chain_deploy_home_dir}}"
+#    executable: /bin/bash
+#  tags:
+#    - deploy
+#    - redeploy
+#    - start
+#    - restart
+#    - only-upgrade-chain-bin
+#    - only-start-stopped-chain-node
+#    - init-common
+
+- name: mkdir bin dir
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  shell: mkdir -p bin
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+  tags:
+    - deploy
+    - redeploy
+    - start
+    - restart
+
+- name: copy bin files
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  copy:
+    src: ../files/{{item}}
+    dest: "{{chain_deploy_home_dir}}/bin"
+  with_items:
+    - "{{ common.chain_bin_name }}"
+  tags:
+    - deploy
+    - redeploy
+    - start
+    - restart
+    - only-upgrade-chain-bin
+    - only-start-stopped-chain-node
+
+- name: give executable permissions to chain binary
+  when: (not has_root_pwd) and (inventory_hostname in groups[master_group] or groups[slaves_group])
+  shell: /bin/bash init.sh
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+    executable: /bin/bash
+  tags:
+    - deploy
+    - redeploy
+    - start
+    - restart
+    - only-upgrade-chain-bin
+    - only-start-stopped-chain-node
+
+- name: give executable permissions to chain binary for root user
+  when: has_root_pwd and (inventory_hostname in groups[master_group] or groups[slaves_group])
+  shell: chmod +x {{item}}
+  become_method: sudo
+  become: yes
+  become_user: root
+  with_items:
+    - "{{ common.chain_bin_name }}"
+  args:
+    chdir: "{{chain_deploy_home_dir}}/bin"
+  tags:
+    - deploy
+    - redeploy
+    - start
+    - restart
+    - only-upgrade-chain-bin
+    - only-start-stopped-chain-node

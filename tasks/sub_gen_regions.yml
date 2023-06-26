@@ -1,0 +1,70 @@
+- name: copy get validator shell script file
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  copy:
+    src: ../files/{{item}}
+    dest: "{{chain_deploy_home_dir}}"
+  with_items:
+    - get-validator-id.sh
+  tags:
+    - init-region
+    - remove-region
+
+- name: get all validator id, save them to tmp dir
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  shell: /bin/bash get-validator-id.sh --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
+  register: adminAddrResult
+  args:
+    chdir: "{{chain_deploy_home_dir}}/"
+    executable: /bin/bash
+  tags:
+    - init-region
+    - remove-region
+    - gen-validator-id
+
+- name: 下载目录/tmp/validator-ids
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  synchronize:
+    src: "/tmp/validator-ids"
+    dest: "/tmp/"
+    mode: pull
+  tags:
+    - init-region
+    - remove-region
+
+- name: copy all /tmp/validator-ids directory to master node
+  when: inventory_hostname in groups[master_group]
+  copy:
+    src: /tmp/{{item}}
+    dest: "/tmp/"
+  with_items:
+    - validator-ids
+  tags:
+    - init-region
+    - remove-region
+
+- name: copy init region shell related script files
+  when: inventory_hostname in groups[master_group]
+  copy:
+    src: ../files/{{item}}
+    dest: "{{chain_deploy_home_dir}}"
+  with_items:
+    - func.sh
+    - common.sh
+    - init_region.sh
+  tags:
+    - init-region
+    - remove-region
+    - do-exec-init-region
+    - sync-init-region-sh
+
+- name: execute init region operation
+  shell: chmod +x init_region.sh && /bin/bash init_region.sh -t create --begin-pos {{ validator_begin_node_pos }} --end-pos {{ validator_end_node_pos }}
+  when: inventory_hostname in groups[master_group]
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+    executable: /bin/bash
+  tags:
+    - init-region
+    - remove-region
+    - do-exec-init-region
+

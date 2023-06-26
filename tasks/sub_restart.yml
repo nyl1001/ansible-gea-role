@@ -1,0 +1,21 @@
+- name: restart master
+  shell: /bin/bash deploy.sh -t restart --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
+  when: inventory_hostname in groups[master_group]
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+    executable: /bin/bash
+  tags:
+    - restart
+    - only-upgrade-chain-bin
+    - fast-restart
+
+- name: restart slaves
+  shell: /bin/bash deploy.sh -t restart-slaves --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
+  when: inventory_hostname in groups[slaves_group]
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+    executable: /bin/bash
+  tags:
+    - restart
+    - only-upgrade-chain-bin
+    - fast-restart

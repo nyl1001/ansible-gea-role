@@ -1,0 +1,33 @@
+- name: copy init work directory shell script file
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  copy:
+    src: ../files/{{item}}
+    dest: "/tmp/{{item}}"
+  with_items:
+    - init_work_dir.sh
+  tags:
+    - deploy
+    - redeploy
+    - init-common
+
+- name: execute init work directory shell script
+  when: inventory_hostname in groups[master_group] or groups[slaves_group]
+  shell: sh /tmp/init_work_dir.sh {{chain_deploy_home_dir}}
+  tags:
+    - deploy
+    - redeploy
+    - init-common
+
+- name: upload common.sh file to work directory
+  ansible.builtin.template:
+    src: shell/common.sh.j2
+    dest: "{{chain_deploy_home_dir}}/common.sh"
+  when:
+    - "inventory_hostname in groups[master_group] or groups[slaves_group]"
+  tags:
+    - deploy
+    - redeploy
+    - start
+    - restart
+    - remove-logs
+    - init-common

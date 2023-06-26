@@ -1,0 +1,21 @@
+- name: start master
+  shell: /bin/bash deploy.sh -t start-master --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
+  when: inventory_hostname in groups[master_group]
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+    executable: /bin/bash
+  tags:
+    - start
+    - only-start-stopped-chain-node
+    - fast-start
+
+- name: start slaves
+  shell: /bin/bash deploy.sh -t start-slaves --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}
+  when: inventory_hostname in groups[slaves_group]
+  args:
+    chdir: "{{chain_deploy_home_dir}}"
+    executable: /bin/bash
+  tags:
+    - start
+    - only-start-stopped-chain-node
+    - fast-start
