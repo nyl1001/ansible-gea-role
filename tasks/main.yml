@@ -47,6 +47,7 @@
     - start
     - restart
     - remove-logs
+    - deploy-slaves
 
 - name: mkdir bin dir
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
