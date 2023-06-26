@@ -244,7 +244,8 @@
     - deploy-slaves
 
 - name: deploy slaves
-  shell: /bin/bash deploy.sh -t redeploy-slaves --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }} --master-node-id "{{ master_node_id_result.content }}" --master-node-ip "{{ master_node_host_ip }}"
+  shell: /bin/bash deploy.sh -t redeploy-slaves --begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }} \
+    --master-node-id "{{ master_node_id_result.content }}" --master-node-ip "{{ master_node_host_ip }}" --pre-node-index {{ hostvars[inventory_hostname]['pre_node_index'] }}
   when: inventory_hostname in groups[slaves_group]
   args:
     chdir: "{{chain_deploy_home_dir}}"

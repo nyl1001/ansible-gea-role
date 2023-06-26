@@ -289,6 +289,8 @@ setupAllSlaveNodesAndStart() {
         masterHostIp=$4
     fi
 
+    local lPreNodeIndex=$5
+
     echo "accept-master-node-id: $masterNodeId"
     echo "accept-master-host-ip: $masterHostIp"
 
@@ -368,7 +370,25 @@ setupAllSlaveNodesAndStart() {
             fi
         else
             if [ $i -eq $curBeginIndex ]; then
-                $sedI "s#seeds = \"\"#seeds = \"$masterNodeId\@$masterNodeIp:26656\"#g" $config_toml
+                if [ "$lPreNodeIndex" -eq 0 ]; then
+                    lastIndex=$(expr "$i" - 1)
+                else
+                    lastIndex=$lPreNodeIndex
+                fi
+                if ps aux | grep $chainBinName | grep -v "grep" | grep "${deployDir}/nodes/node$lastIndex" > /dev/null ; then
+                    echo "本机器已经部署有前序结点，前序结点索引为  $lastIndex"
+                    last_slave_node_id=$(./$chainBinName tendermint show-node-id --home "${deployDir}"/nodes/node"$lastIndex")
+                    if [ $((i % 2)) -eq 0 ]; then
+                        echo "----- The current value of i is $i, the current node is an even node, ip2: $ip2"
+                        $sedI "s#seeds = \"\"#seeds = \"$last_slave_node_id\@$ip2:$lastP2pAddrPort\"#g" $config_toml
+                    else
+                        echo "----- The current value of i is $i, the current node is an odd number, ip1: $ip1"
+                        $sedI "s#seeds = \"\"#seeds = \"$last_slave_node_id\@$ip1:$lastP2pAddrPort\"#g" $config_toml
+                    fi
+                else
+                    echo "本机器尚未部署前序结点，前序结点索引为  $lastIndex"
+                    $sedI "s#seeds = \"\"#seeds = \"$masterNodeId\@$masterNodeIp:26656\"#g" $config_toml
+                fi
             elif [ $i -gt $curBeginIndex ] && [ $((i % 2)) -eq 0 ]; then
                 echo "----- The current value of i is $i, the current node is an even node, ip2: $ip2"
                 $sedI "s#seeds = \"\"#seeds = \"$last_slave_node_id\@$ip2:$lastP2pAddrPort\"#g" $config_toml
@@ -423,7 +443,7 @@ redeployChain() {
     initAllSlaveNodes "$curBeginIndex" "$curEndIndex"
 
     # update all slave nodes config and start them
-    setupAllSlaveNodesAndStart "$curBeginIndex" "$curEndIndex" "$autoGetMasterNodeId" "$hostIp"
+    setupAllSlaveNodesAndStart "$curBeginIndex" "$curEndIndex" "$autoGetMasterNodeId" "$hostIp" 0
 }
 
 restartChain() {
@@ -550,6 +570,11 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
+    -p|--pre-node-index)
+      preNodeIndex="$2"
+      shift # past argument
+      shift # past value
+      ;;
     -h|-help|--help)
       $OUTPUT "$commandHelpHints"
       exit 1
@@ -599,6 +624,10 @@ fi
 
 if [ -z "$masterNodeId" ] ;then
     masterNodeId=
+fi
+
+if [ -z "$preNodeIndex" ] ;then
+    preNodeIndex=0
 fi
 
 globalStartIndex=0
@@ -654,7 +683,7 @@ case $executeType in
         fi
 #        nodeCount=$(($nodeCount+1))
         initAllSlaveNodes "$globalStartIndex" "$globalEndIndex"
-        setupAllSlaveNodesAndStart "$globalStartIndex" "$globalEndIndex" "$masterNodeId" "$masterHostIp"
+        setupAllSlaveNodesAndStart "$globalStartIndex" "$globalEndIndex" "$masterNodeId" "$masterHostIp" "$preNodeIndex"
         ;;
     "start-master")
         checkBasicInputArgs
