@@ -12,6 +12,7 @@ isStringInFile() {
 }
 
 sedI="sed -i ''"
+sysType=$(uname -s)
 case $sysType in
     "Linux")
         sedI="sed -i"
