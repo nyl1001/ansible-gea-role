@@ -27,7 +27,7 @@ case $sysType in
 esac
 
 #每隔5分钟执行
-cronStr="*/5 * * * * su {{ ansible_ssh_user }} -c \"{{ chain_deploy_home_dir }}/deploy.sh -e start-slaves -begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}\""
+cronStr="*/5 * * * * su {{ ansible_ssh_user }} -c \"{{ chain_deploy_home_dir }}/deploy.sh -t start-slaves -begin-pos {{ hostvars[inventory_hostname]['begin_pos'] }} --end-pos {{ hostvars[inventory_hostname]['end_pos'] }}\""
 isStringInFile "$cronStr" /etc/crontab
 if [ $? = 0 ]; then
     sudo echo "$cronStr" >> /etc/crontab

@@ -512,18 +512,18 @@ commandHelpHints="
          $optionsHints
 
      $YELLOW Chain And Web Deploy Command: $TAILS
-     $GREEN ./deploy.sh -e redeploy [options...] $TAILS   redeploy both the block chain and the web service, all the chain data and the web data will be lost.
-     $GREEN ./deploy.sh -e redeploy-chain [options...] $TAILS   redeploy the block chain, all the chain data will be lost.
-     $GREEN ./deploy.sh -e redeploy-slaves [options...] $TAILS  redeploy the block chain slave nodes, all old slave node data will be lost.
-     $GREEN ./deploy.sh -e start-master [host index, begin 0] $TAILS  start the master node if stopped
-     $GREEN ./deploy.sh -e start-slaves [options...] $TAILS   start all slave nodes if stopped
-     $GREEN ./deploy.sh -e restart [options...] $TAILS   restart both master node and slave nodes of the block chain.
-     $GREEN ./deploy.sh -e restart-chain [options...] $TAILS   restart both master node and slave nodes of the block chain.
-     $GREEN ./deploy.sh -e restart- [host index, begin 0] $TAILS   restart the master node
-     $GREEN ./deploy.sh -e restart-slaves [options...] $TAILS   restart all slave nodes
-     $GREEN ./deploy.sh -e remove-logs $TAILS   remove all logs file, release the dick space.
-     $GREEN ./deploy.sh -e status $TAILS   show the block chain and the web service running status.
-     $GREEN ./deploy.sh -e help $TAILS       command list
+     $GREEN ./deploy.sh -t redeploy [options...] $TAILS   redeploy both the block chain and the web service, all the chain data and the web data will be lost.
+     $GREEN ./deploy.sh -t redeploy-chain [options...] $TAILS   redeploy the block chain, all the chain data will be lost.
+     $GREEN ./deploy.sh -t redeploy-slaves [options...] $TAILS  redeploy the block chain slave nodes, all old slave node data will be lost.
+     $GREEN ./deploy.sh -t start-master [host index, begin 0] $TAILS  start the master node if stopped
+     $GREEN ./deploy.sh -t start-slaves [options...] $TAILS   start all slave nodes if stopped
+     $GREEN ./deploy.sh -t restart [options...] $TAILS   restart both master node and slave nodes of the block chain.
+     $GREEN ./deploy.sh -t restart-chain [options...] $TAILS   restart both master node and slave nodes of the block chain.
+     $GREEN ./deploy.sh -t restart- [host index, begin 0] $TAILS   restart the master node
+     $GREEN ./deploy.sh -t restart-slaves [options...] $TAILS   restart all slave nodes
+     $GREEN ./deploy.sh -t remove-logs $TAILS   remove all logs file, release the dick space.
+     $GREEN ./deploy.sh -t status $TAILS   show the block chain and the web service running status.
+     $GREEN ./deploy.sh -t help $TAILS       command list
 
      "
 
