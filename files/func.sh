@@ -96,6 +96,16 @@ lowercase(){
     echo "$1" | sed "y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/"
 }
 
+isStringInFile() {
+    FIND_STR=$1
+    FIND_FILE=$2
+    # 判断匹配函数，匹配函数不为0，则包含给定字符
+    if [ `grep -c "$FIND_STR" $FIND_FILE` -ne '0' ];then
+        return 1
+    fi
+    return 0
+}
+
 OS=$(lowercase $(uname))
 KERNEL=$(uname -r)
 MACH=$(uname -m)
