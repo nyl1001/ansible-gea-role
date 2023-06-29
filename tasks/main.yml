@@ -46,12 +46,6 @@
     - only-start-stopped-chain-node
     - fast-start
 
-- name: set crontab
-  include_tasks:
-    file: sub_crontab.yml
-  tags:
-    - cron
-
 - name: stop all chain nodes, include master node and slave nodes
   include_tasks:
     file: sub_stop.yml
