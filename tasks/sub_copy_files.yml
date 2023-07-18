@@ -10,8 +10,6 @@
   tags:
     - deploy
     - redeploy
-    - start
-    - restart
     - remove-logs
     - deploy-slaves
 
@@ -40,8 +38,6 @@
   tags:
     - deploy
     - redeploy
-    - start
-    - restart
 
 - name: copy bin files
   when: inventory_hostname in groups[master_group] or groups[slaves_group]
@@ -53,8 +49,6 @@
   tags:
     - deploy
     - redeploy
-    - start
-    - restart
     - only-upgrade-chain-bin
     - only-start-stopped-chain-node
 
@@ -67,8 +61,6 @@
   tags:
     - deploy
     - redeploy
-    - start
-    - restart
     - only-upgrade-chain-bin
     - only-start-stopped-chain-node
 
@@ -85,7 +77,5 @@
   tags:
     - deploy
     - redeploy
-    - start
-    - restart
     - only-upgrade-chain-bin
     - only-start-stopped-chain-node
